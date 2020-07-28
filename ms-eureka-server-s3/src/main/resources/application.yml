@@ -1,0 +1,15 @@
+server:
+  port: 8763
+
+eureka:
+  instance:
+    #hostname: localhost
+    hostname: eureka8763.com
+  client:
+    registerWithEureka: false
+    fetchRegistry: false
+    serviceUrl:
+      #单机
+      #defaultZone:http://${eureka.instance.hostname}:${server.port}/eureka/
+      #集群
+      defaultZone: http://eureka8762.com:8762/eureka,http://eureka8761.com:8761/eureka
