@@ -2,14 +2,14 @@
 在服务注册与发现中，有一个注册中心，当服务器启动时，会把当前自己的服务器信息，如服务地址通讯地址等以别名的方式注册到注册中心，服务消费者通过别名的方式从注册中心获取实际调用地址；相当于键值对（key:别名、服务名，value:服务器元数据，如地址、端口、请求路径等）；
 Eureka采用CS的设计模式，即客户端和服务端Eureka server作为服务端（使用@EnableEurekaServer注解标识），它是服务注册中心而其它微服务作为客户端(使用@EnableEurekaClient标识)注册进Eureka server维持心跳，服务消费者通过RestTemplate（使用@LoadBalanced注解来开启通过微服务名调用，并开启负载均衡）对象调用服务生产者；
 
-<b>Eurka 保证 AP</b>
+<h5>Eurka 保证 AP</h5>
 
 Eureka Server 各个节点都是平等的，几个节点挂掉不会影响正常节点的工作，剩余的节点依然可以提供注册和查询服务。而 Eureka Client 在向某个 Eureka 注册时，如果发现连接失败，则会自动切换至其它节点。只要有一台 Eureka Server 还在，就能保证注册服务可用(保证可用性)，只不过查到的信息可能不是最新的(不保证强一致性)。
-<b>Eurka 集群架构如下</b>
+<h5>Eurka 集群架构如下</h5>
 ![](https://img2020.cnblogs.com/blog/1911127/202007/1911127-20200729223727244-1792086908.png)
 Eureka server通过相互注册来构建集群、Eureka Client通过注册多个同服务名的微服务进所有的Eureka server来构建集群；
 
-<b>Eureka集群配置</b>
+<h5>Eureka集群配置</h5>
 ```
 server:
   port: 8763
@@ -17,7 +17,7 @@ server:
 eureka:
   instance:
     #hostname: localhost
-    hostname: eureka8763.com
+    hostname: eureka8763.com`
   client:
     registerWithEureka: false
     fetchRegistry: false
@@ -27,7 +27,7 @@ eureka:
       #集群
       defaultZone: http://eureka8762.com:8762/eureka,http://eureka8761.com:8761/eureka
 ```
-<b>Eureka Client集群配置</b>
+<h5>Eureka Client集群配置</h5>
 ```
 spring:
   application:
@@ -38,8 +38,8 @@ eureka:
       defaultZone: http://eureka8761.com:8761/eureka,http://eureka8762.com:8762/eureka,http://eureka8763.com:8763/eureka
 ```
 
-<b>快速搭建一个Eureka Demo</b>
-<b>Eureka Server</b>
+<h5>快速搭建一个Eureka Demo</h5>
+<h5>Eureka Server</h5>
 `pom.xml`
 ```
 ...
@@ -79,8 +79,8 @@ eureka:
       defaultZone: http://eureka8762.com:8762/eureka,http://eureka8761.com:8761/eureka
 ```
 
-<b>Eureka Client</b>
-<b>消费者</b>
+<h5>Eureka Client</h5>
+<h5>消费者</h5>
 `pom.xml`
 ```
 ...
@@ -170,8 +170,8 @@ public class RestTemplateConfig {
     }
 }
 ```
-<b>Eureka Client</b>
-<b>服务生产者</b>
+<h5>Eureka Client</h5>
+<h5>服务生产者</h5>
 `pom.xml`
 ```
 ...
@@ -270,7 +270,7 @@ public class UserController {
     }
 ```
 
-<b>测试</b>
+<h5>测试</h5>
 <h6>服务监控</h6>
 
 ![](images/1911127-20200729234011024-1065431463.png)
@@ -279,7 +279,7 @@ public class UserController {
 
 ![](images/1911127-20200729234213816-1495036420.png)
 
-<b>微服务信息完善</b>
+<h5>微服务信息完善</h5>
 `父工程pom.xml`
 ```
 ...
