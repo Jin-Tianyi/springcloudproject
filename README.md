@@ -8,7 +8,8 @@ Eureka Server 各个节点都是平等的，几个节点挂掉不会影响正常
 <h5>Eurka 集群架构如下</h5>
 
 ![](https://img2020.cnblogs.com/blog/1911127/202007/1911127-20200729223727244-1792086908.png)
-Eureka server通过相互注册来构建集群、Eureka Client通过注册多个同服务名的微服务进所有的Eureka server来构建集群；
+
+<p>Eureka server通过相互注册来构建集群、Eureka Client通过注册多个同服务名的微服务进所有的Eureka server来构建集群；</p>
 
 <h5>Eureka集群配置</h5>
 
