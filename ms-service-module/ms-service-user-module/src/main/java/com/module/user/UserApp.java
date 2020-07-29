@@ -9,7 +9,7 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 /**
  * @author :jty
  * @date :20-7-20
- * @description :用户模块
+ * @description :用户模块   @EnableEurekaClient eureka客户端 @EnableDiscoveryClient开启服务发现，获取服务信息
  */
 @SpringBootApplication
 @EnableEurekaClient

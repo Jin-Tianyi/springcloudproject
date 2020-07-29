@@ -1,13 +1,13 @@
 server:
-  port: 8763
+  port: 8763 #端口
 
 eureka:
   instance:
-    #hostname: localhost
-    hostname: eureka8763.com
+    #hostname: localhost  #服务名
+    hostname: eureka8763.com  #服务名
   client:
-    registerWithEureka: false
-    fetchRegistry: false
+    registerWithEureka: false #不注册自身
+    fetchRegistry: false #要不要去注册中心获取其他服务的地址
     serviceUrl:
       #单机
       #defaultZone:http://${eureka.instance.hostname}:${server.port}/eureka/

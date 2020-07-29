@@ -17,7 +17,7 @@ import java.util.List;
 /**
  * @author :jty
  * @date :20-7-20
- * @description :用户相关请求
+ * @description :用户模块
  */
 @RestController
 public class UserController {
