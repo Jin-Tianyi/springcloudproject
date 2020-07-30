@@ -342,3 +342,67 @@ info:
 <h6>详细信息</h6>
 
 ![](images/1911127-20200729234509973-1697077441.png)
+
+
+<h5>Eureka自我保护</h5>
+
+Eureka Server 在运行期间会去统计心跳失败比例在 15 分钟之内是否低于 85%，如果低于 85%（eureka.server.renewal-percent-threshold=0.85），Eureka Server 会将这些实例保护起来，让这些实例不会过期，但是在保护期内如果服务刚好这个服务提供者非正常下线了，此时服务消费者就会拿到一个无效的服务实例，此时会调用失败，对于这个问题需要服务消费者端要有一些容错机制，如重试，断路器等；即一个服务不可用后，Eureka不会立即对其清理，依旧会对微服务的信息进行保存。
+
+<p><b>Erueka server配置相关属性</b></p>
+
+```
+#将IP注册到Eureka Server上，如果不配置就是机器的主机名
+eureka.instance.prefer-ip-address=true
+
+#设为false，关闭自我保护
+eureka.server.enable-self-preservation=false
+
+#表示是否将自己注册到Eureka Server，默认为true
+eureka.client.register-with-eureka=false
+
+#表示是否从Eureka Server获取注册信息，默认为true
+eureka.client.fetch-registry=false
+
+# 扫描失效服务的间隔时间（单位毫秒，默认是60*1000）即60秒
+eureka.server.eviction-interval-timer-in-ms=5000
+
+#设置 eureka server同步失败的等待时间 默认 5分
+#在这期间，它不向客户端提供服务注册信息
+eureka.server.wait-time-in-ms-when-sync-empty=5
+
+#设置 eureka server同步失败的重试次数 默认为 5 次
+eureka.server.number-of-replication-retries=5
+
+#自我保护系数（默认0.85）
+eureka.server.renewal-percent-threshold=0.49
+```
+<h5>Eureka心跳、下线、自我保护</h5>
+
+参考 <a href="https://blog.csdn.net/hry2015/article/details/78245149">https://blog.csdn.net/hry2015/article/details/78245149</a>
+
+<p><b>服务心跳</b></p>
+
+服务实例会通过心跳(eureka.instance.lease-renewal-interval-in-seconds定义心跳的频率，默认值为30s)续约的方式向Eureka Server定时更新自己的状态。Eureka Server收到心跳后，会通知集群里的其它Eureka Server更新此实例的状态。Service Provider/Service Consumer也会定时更新缓存的实例信息。
+
+<p><b>服务下线和剔除</b></p>
+
+服务的下线有两种情况：
+
+在Service Provider服务shutdown的时候，主动通知Eureka Server把自己剔除，从而避免客户端调用已经下线的服务。
+Eureka Server会定时（间隔值是eureka.server.eviction-interval-timer-in-ms，默认值为0，默认情况不删除实例）进行检查，如果发现实例在在一定时间（此值由eureka.instance.lease-expiration-duration-in-seconds定义，默认值为90s）内没有收到心跳，则会注销此实例。
+这种情况下，Eureka Client的最多需要[eureka.instance.lease-renewal-interval-in-seconds + eureka.client.registry-fetch-interval-seconds]时间才发现服务已经下线。同理，一个新的服务上线后，Eureka Client的服务消费方最多需要相同的时间才发现服务已经上线
+
+服务下线，同时会更新到Eureka Server其他节点和Eureka client的缓存，流程类似同以上的register过程
+
+<p><b>自我保护模式</b></p>
+如果Eureka Server最近1分钟收到renew的次数小于阈值（即预期的最小值），则会触发自我保护模式，此时Eureka Server此时会认为这是网络问题，它不会注销任何过期的实例。等到最近收到renew的次数大于阈值后，则Eureka Server退出自我保护模式。
+
+自我保护模式阈值计算：
+
+每个instance的预期心跳数目 = 60/每个instance的心跳间隔秒数
+阈值 = 所有注册到服务的instance的数量的预期心跳之和 *自我保护系数
+以上的参数都可配置的：
+
+instance的心跳间隔秒数：eureka.instance.lease-renewal-interval-in-seconds
+自我保护系数：eureka.server.renewal-percent-threshold
+如果我们的实例比较少且是内部网络时，推荐关掉此选项。我们也可以通过eureka.server.enable-self-preservation = false来禁用自我保护系数
