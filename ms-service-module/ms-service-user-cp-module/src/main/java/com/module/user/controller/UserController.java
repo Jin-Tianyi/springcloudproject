@@ -1,5 +1,6 @@
 package com.module.user.controller;
 
+
 import com.base.dao.User;
 import com.base.entity.Result;
 import com.module.user.mapper.UserMapper;
@@ -13,10 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-
 /**
  * @author :jty
- * @date :20-7-20
+ * @date :20-7-31
  * @description :用户模块
  */
 @RestController
