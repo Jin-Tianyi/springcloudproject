@@ -217,8 +217,9 @@ public class AdminApp {
 
 <h5>自定义负载均衡策略</h5>
 
-&#160; &#160; &#160; &#160;负载均衡策略，以不同的负载均衡算法获取请求目的地址
-&#160; &#160; &#160; &#160;通过自定义从微服务实例列表中获取目的微服务实例ServiceInstance的方法，即自定义获取目的微服务实例在列表List<ServiceInstance>中的下标的过程，获取该下标对应的ServiceInstance，自定义负载均衡策略。
+<p>&#160; &#160; &#160; &#160;负载均衡策略，以不同的负载均衡算法获取请求目的地址</p>
+
+<p>&#160; &#160; &#160; &#160;通过自定义从微服务实例列表中获取目的微服务实例ServiceInstance的方法，即自定义获取目的微服务实例在列表List中的下标的过程，获取该下标对应的ServiceInstance，自定义负载均衡策略。</p>
 
 <h6>通过自定义类自定义随机法</h6>
 
@@ -448,9 +449,10 @@ public class SelfRoundRobinRule extends AbstractLoadBalancerRule {
     }
 }
 ```
-后续操作与替换负载均衡策略相同
--自定义配置类
--主启动类添加@RibbonClient(name = "user-server",configuration = RibbonRuleConfig.class)
+<p>后续操作与替换负载均衡策略相同</p>
+
+- 自定义配置类
+- 主启动类添加@RibbonClient(name = "user-server",configuration = RibbonRuleConfig.class)
 `RibbonRuleConfig.java`
 ```
 /**
