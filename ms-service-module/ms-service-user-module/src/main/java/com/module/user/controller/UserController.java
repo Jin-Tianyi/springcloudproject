@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     @Autowired
     private UserMapper userMapper;
-    @Value("server.port")
+    @Value("${server.port}")
     String serverPort;
     Logger logger = LoggerFactory.getLogger(UserController.class);
 
