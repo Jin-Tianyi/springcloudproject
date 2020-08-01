@@ -14,10 +14,19 @@ import org.springframework.web.client.RestTemplate;
 public class RestTemplateConfig {
     /**
      * @LoadBalanced 通过服务名调用，开启负载均衡
+     * 使用自定义负载均衡方法时需注释该方法，不开启服务名调用
      * */
-    @Bean
+    /*@Bean
     @LoadBalanced
     public RestTemplate getRestTemplate(){
+        return new RestTemplate();
+    }*/
+
+    /**
+     * @LoadBalanced 直接使用RestTemplate调用请求地址，使用自定义负载均衡方法获取地址
+     */
+    @Bean
+    public RestTemplate getRestTemplate() {
         return new RestTemplate();
     }
 }

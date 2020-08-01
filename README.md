@@ -214,3 +214,260 @@ public class AdminApp {
 }
 ```
 
+
+<h5>自定义负载均衡策略</h5>
+
+&#160; &#160; &#160; &#160;负载均衡策略，以不同的负载均衡算法获取请求目的地址
+&#160; &#160; &#160; &#160;通过自定义从微服务实例列表中获取目的微服务实例ServiceInstance的方法，即自定义获取目的微服务实例在列表List<ServiceInstance>中的下标的过程，获取该下标对应的ServiceInstance，自定义负载均衡策略。
+
+<h6>通过自定义类自定义随机法</h6>
+
+`SelfLoadBalancer.java`
+```
+/**
+ * @author :jty
+ * @date :20-8-1
+ * @description :自定义负载均衡策略，选择目标服务的调用地址
+ */
+@Component
+public class SelfLoadBalancer {
+    private static Logger log = LoggerFactory.getLogger(SelfRoundRobinRule.class);
+
+    public final ServiceInstance chooseByRandomRule(List<ServiceInstance> serviceInstances) {
+        log.info("----------使用自定义随机策略----------");
+        ServiceInstance instance = null;
+        int instanceCount = serviceInstances.size();
+        while (instance == null) {
+            if (Thread.interrupted()) {
+                return null;
+            }
+
+            int index = this.chooseRandomInt(instanceCount);
+            log.info("下次请求下标为：{}", index);
+            instance = (ServiceInstance) serviceInstances.get(index);
+            Thread.yield();
+        }
+        return instance;
+
+    }
+
+    protected int chooseRandomInt(int serverCount) {
+        return ThreadLocalRandom.current().nextInt(serverCount);
+    }
+}
+```
+`AdminController.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-28
+ * @description : 管理员模块
+ */
+@RestController
+public class AdminController {
+    @Autowired
+    RestTemplate restTemplate;
+    @Autowired
+    private DiscoveryClient discoveryClient;
+    @Autowired
+    SelfLoadBalancer selfLoadBalancer;
+    /**
+     * 服务名
+     */
+    private final String SERVICE_NAME = "user-server";
+     /**
+     * 自定义负载均衡策略选择目标服务实例地址
+     */
+    @GetMapping(value = "/admin/get/user/{userId}", produces = "application/json;charset=utf-8")
+    public Result selfRuleFindUser(@PathVariable int userId) {
+        List<ServiceInstance> instances = discoveryClient.getInstances(SERVICE_NAME);
+        ServiceInstance serviceInstance = selfLoadBalancer.chooseByRandomRule(instances);
+        Result result = restTemplate.getForObject(serviceInstance.getUri() + "/get/user/" + userId, Result.class);
+        result.setMsg("自定义随机数负载均衡策略----------" + result.getMsg());
+        return result;
+    }
+```
+`RestTemplateConfig.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-28
+ * @description :注入RestTemplate Bean
+ */
+@Configuration
+public class RestTemplateConfig {
+    /**
+     * @LoadBalanced 通过服务名调用，开启负载均衡
+     * 使用自定义负载均衡方法时需注释该方法，不开启服务名调用
+     * */
+    /*@Bean
+    @LoadBalanced
+    public RestTemplate getRestTemplate(){
+        return new RestTemplate();
+    }*/
+
+    /**
+     * @LoadBalanced 直接使用RestTemplate调用请求地址，使用自定义负载均衡方法获取地址
+     */
+    @Bean
+    public RestTemplate getRestTemplate() {
+        return new RestTemplate();
+    }
+}
+```
+
+`AdminApp.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-28
+ * @description : @RibbonClient  name:该负载均衡策略生效对象（微服务提供者）微服务名，configuration：自定义配置类
+ */
+/*@SpringBootApplication
+@EnableEurekaClient
+@RibbonClient(name = "user-server",configuration = RibbonRuleConfig.class)
+public class AdminApp {
+    public static void main(String[] args) {
+        SpringApplication.run(AdminApp.class);
+    }
+}*/
+
+/**
+ * @author :jty
+ * @date :20-7-28
+ * @description : 使用自定义负载均衡策略 SelfLoadBalancer.class，去掉@RibbonClient注解
+ */
+@SpringBootApplication
+@EnableEurekaClient
+public class AdminApp {
+    public static void main(String[] args) {
+        SpringApplication.run(AdminApp.class);
+    }
+}
+```
+![](images/1911127-20200801201724202-1340200758.png)
+
+![](images/1911127-20200801201835142-311451754.png)
+
+<h6>通过继承AbstractLoadBalancerRule.class类替换默认轮询方法自定义负载均衡策略</h6>
+
+`SelfRoundRobinRule.java`
+```
+/**
+ * @author :jty
+ * @date :20-8-1
+ * @description :自定义轮询负载均衡策略,千万不能有@Component,否则通过配置类RibbonRuleConfig.class注入bean后,
+ * spring会检测到两个相同的Bean报错
+ * 该类为修改后的RoundRobinRule
+ */
+public class SelfRoundRobinRule extends AbstractLoadBalancerRule {
+    private AtomicInteger nextServerCyclicCounter;
+    private static final boolean AVAILABLE_ONLY_SERVERS = true;
+    private static final boolean ALL_SERVERS = false;
+    /**
+     * 每个请求轮询两次
+     */
+    private static final int ROUND_NUMBER = 2;
+    private static Logger log = LoggerFactory.getLogger(SelfRoundRobinRule.class);
+
+    public SelfRoundRobinRule() {
+        this.nextServerCyclicCounter = new AtomicInteger(0);
+    }
+
+    public SelfRoundRobinRule(ILoadBalancer lb) {
+        this();
+        this.setLoadBalancer(lb);
+    }
+
+    public Server choose(ILoadBalancer lb, Object key) {
+        if (lb == null) {
+            log.warn("no load balancer");
+            return null;
+        } else {
+            Server server = null;
+            int count = 0;
+
+            while (true) {
+                if (server == null && count++ < 10) {
+                    List<Server> reachableServers = lb.getReachableServers();
+                    List<Server> allServers = lb.getAllServers();
+                    int upCount = reachableServers.size();
+                    int serverCount = allServers.size();
+                    if (upCount != 0 && serverCount != 0) {
+                        int nextServerIndex = this.incrementAndGetModulo(serverCount);
+                        server = (Server) allServers.get(nextServerIndex);
+                        if (server == null) {
+                            Thread.yield();
+                        } else {
+                            if (server.isAlive() && server.isReadyToServe()) {
+                                return server;
+                            }
+
+                            server = null;
+                        }
+                        continue;
+                    }
+
+                    log.warn("No up servers available from load balancer: " + lb);
+                    return null;
+                }
+
+                if (count >= 10) {
+                    log.warn("No available alive servers after 10 tries from load balancer: " + lb);
+                }
+
+                return server;
+            }
+        }
+    }
+
+    private int incrementAndGetModulo(int modulo) {
+        int current;
+        int next;
+        int index;
+        do {
+            current = this.nextServerCyclicCounter.get();
+            log.info("当前请求{}次", current);
+            //下次请求次数大于等于Integer.MAX_VALUE时，重置为0
+            next = (current + 1) >= 2147483647 ? 0 : (current + 1);
+        } while (!this.nextServerCyclicCounter.compareAndSet(current, next));
+
+        //轮询两次 下一次请求下标=(次数/2)/总服务数量
+        index = (current / ROUND_NUMBER) % modulo;
+        log.info("下次请求下标为：{}", index);
+        return index;
+    }
+
+    @Override
+    public Server choose(Object key) {
+        return this.choose(this.getLoadBalancer(), key);
+    }
+
+    @Override
+    public void initWithNiwsConfig(IClientConfig clientConfig) {
+    }
+}
+```
+后续操作与替换负载均衡策略相同
+-自定义配置类
+-主启动类添加@RibbonClient(name = "user-server",configuration = RibbonRuleConfig.class)
+`RibbonRuleConfig.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-31
+ * @description :注入自定义轮询策略
+ */
+@Configuration
+public class RibbonRuleConfig {
+    @Bean
+    public IRule getRule(){
+        return new SelfRoundRobinRule();
+    }
+}
+```
+然后在主启动类上添加@RibbonClient(name = "user-server",configuration = RibbonRuleConfig.class)，对suer-server服务使用自定义策略
+
+![](images/1911127-20200801200805602-1806140738.png)
+
+![](images/1911127-20200801200828895-383663337.png)
