@@ -1,5 +1,5 @@
 server:
-  port: 8002
+  port: 8001
 spring:
   application:
     name: admin-server
@@ -11,6 +11,19 @@ eureka:
   instance:
     instance-id: ${spring.application.name}:${server.port} #微服务信息提示为服务名：端口,可自定义
     prefer-ip-address: true     #访问路径可以显示IP地址
+
+#OpenFeign 默认支持Ribbon
+ribbon:
+  #指的是建立连接所用的时间，适用于网络状况正常的情况下，两端连接所用的时间
+  ReadTimeout: 5000
+  #指的是连接后从服务器读取到可用资源所用的时间（默认是1秒）
+  ConnectTimeout: 5000
+
+#某个类的日志级别
+logging:
+  level:
+    #feign 日志以什么级别监控哪个接口
+    com.module.admin.service.UserFeignService: debug
 
 #微服务信息
 info:

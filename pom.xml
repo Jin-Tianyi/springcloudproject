@@ -16,6 +16,7 @@
         <module>ms-service-module/ms-service-user-module</module>
         <module>ms-service-module/ms-service-admin-module</module>
         <module>ms-service-common</module>
+        <module>ms-service-module/ms-service-user-cp-module</module>
 
     </modules>
     <packaging>pom</packaging>
