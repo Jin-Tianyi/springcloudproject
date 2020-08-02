@@ -29,6 +29,11 @@ logging:
     #feign 日志以什么级别监控哪个接口
     com.module.admin.service.UserFeignService: debug
 
+#开启feign hystrix 服务降级
+feign:
+  hystrix:
+    enabled: true
+
 #微服务信息
 info:
   app.name: admin-server
