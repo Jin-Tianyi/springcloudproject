@@ -88,3 +88,96 @@
  ![](images/1911127-20200803004620684-601450631.png)
  
  <p>优点：代码分离、高重用、可插拔。</p>
+ 
+<h5>服务熔断 break</h5>
+
+&#160; &#160; &#160; &#160;服务熔断的作用类似于我们家用的保险丝，当某服务出现不可用或响应超时的情况时，为了防止整个系统出现雪崩，暂时停止对该服务的调用,是应对雪崩效应的一种微服务链路保护机制。服务正常调用情况下，熔断处于关闭状态（CLOSED），对服务调用不做任何限制。当扇出链路的某个微服务不可用或者响应时间太长时，会进行服务降级，固定时间窗口(一定时间内)内，接口调用出错比例达到一个阈值（Hystrix缺省为5秒20次），会进入熔断开启状态（OPEN）,进而熔断该节点微服务的调用，下次同样的调用直接返回“错误”的响应信息。在进入熔断开启状态一段时间之后（Hystrix默认是5秒），熔断器会进入半熔断状态（HALF-OPEN）,尝试恢复服务调用,并记录调用成功率，当正确请求达到某个指标后恢复调用链路进入熔断关闭状态（CLOSED），服务正常调用，反之将重新进入熔断开启（OPEN），直接返回‘错误’响应。一般对服务调用链中的下游服务做服务熔断以保证上游服务快速得到响应，不阻塞整个系统的运行。
+
+<h6>Hystrix服务熔断</h6>
+
+pom.xml`中引入依赖，主启动类添加`@EnableCircuitBreaker`注释，与上述服务提供方进行服务降级相同。
+`UserController.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-20
+ * @description :用户模块
+ */
+@RestController
+public class UserController {
+
+    private Logger logger = LoggerFactory.getLogger(UserController.class);
+    private SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static int index = 0;
+
+    /**
+     * OpenFeign 超市请求测试,1.5s超时,自定义处理超时参数
+     */
+    @GetMapping(value = "/get/user/timeout")
+    public Result userServiceTimeOut() {
+        try {
+            TimeUnit.MILLISECONDS.sleep(3000);
+        } catch (InterruptedException e) {
+            logger.info(e.getMessage());
+        }
+        return new Result(200, "三秒后处理结束");
+    }
+
+    /**
+     * 模拟程序异常 ，服务熔断实例
+     */
+    @GetMapping(value = "/get/user/exception/{number}")
+    @HystrixCommand(fallbackMethod = "userServiceHappenExceptionFb", commandProperties = {
+            //开启熔断
+            @HystrixProperty(name = "circuitBreaker.enabled", value = "true"),
+            //时间窗口请求数量
+            @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value = "10"),
+            //时间窗口持续10s时间
+            @HystrixProperty(name = "metrics.rollingStats.timeInMilliseconds", value = "10000"),
+            //达到60%错误率后开启熔断器
+            @HystrixProperty(name = "circuitBreaker.errorThresholdPercentage", value = "60"),
+            //6s后进入半开状态
+            @HystrixProperty(name = "circuitBreaker.sleepWindowInMilliseconds", value = "6000")
+    })
+    public Result userServiceHappenException(@PathVariable(value = "number") int number) {
+        logger.info("---------正常执行--------");
+        int a = 10 / number;
+        Date date = new Date();
+        logger.info("请求时间：{},请求序列：{}", df.format(date), index++);
+        return new Result(200, "程序正常结束", a);
+    }
+
+    public Result userServiceHappenExceptionFb(@PathVariable(value = "number") int number) {
+        logger.info("---------执行fallback方法--------");
+        Date date = new Date();
+        logger.info("请求时间：{},请求序列：{}", df.format(date), index++);
+        return new Result(200, "程序异常中断");
+    }
+
+}
+```
+首次正常请求
+![](images/1911127-20200805003548006-1202868885.png)
+
+多次异常请求
+![](images/1911127-20200805003613498-1220861111.png)
+
+再次执行正常请求
+![](images/1911127-20200805003627532-992917553.png)
+
+一段时间后再次执行正常请求
+![](images/1911127-20200805003706016-1474045631.png)
+
+![](images/1911127-20200805004603392-257472232.png)
+
+<p><b>相应参数官方文档</b></p>
+
+<a href="https://github.com/Netflix/Hystrix/wiki/Configuration">https://github.com/Netflix/Hystrix/wiki/Configuration</a>
+
+<p><b>参数类</b></p>
+
+`com/netflix/hystrix/HystrixCommandProperties.class`
+
+<p><b>缺省值</b></p>
+
+![](images/1911127-20200805000304239-331835819.png)
