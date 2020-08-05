@@ -18,7 +18,6 @@ import org.springframework.web.client.RestTemplate;
 public class AdminController {
     @Autowired
     RestTemplate restTemplate;
-//    private static final String USER_MODULE_URL = "http://localhost:8001";
     private static final String USER_MODULE_URL = "http://user-server";
 
     @GetMapping(value = "/admin/get/user/{userId}", produces = "application/json;charset=utf-8")

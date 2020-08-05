@@ -1,13 +1,16 @@
 server:
-  port: 8002
+  port: 8001
 spring:
   application:
     name: admin-server
 
 eureka:
   client:
-    serviceUrl: #注册服务到eureka集群
-      defaultZone: http://eureka8761.com:8761/eureka,http://eureka8762.com:8762/eureka,http://eureka8763.com:8763/eureka
+    serviceUrl:
+      #单机
+      defaultZone: http://eureka8761.com:8761/eureka
+      #注册服务到eureka集群
+      #defaultZone: http://eureka8761.com:8761/eureka,http://eureka8762.com:8762/eureka,http://eureka8763.com:8763/eureka
   instance:
     instance-id: ${spring.application.name}:${server.port} #微服务信息提示为服务名：端口,可自定义
     prefer-ip-address: true     #访问路径可以显示IP地址

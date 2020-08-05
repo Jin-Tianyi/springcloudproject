@@ -14,8 +14,8 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 @EnableDiscoveryClient
 @EnableEurekaClient
 @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
-public class SysGetwayApp {
+public class GetwayApp {
     public static void main(String[] args) {
-        SpringApplication.run(SysGetwayApp.class, args);
+        SpringApplication.run(GetwayApp.class, args);
     }
 }
