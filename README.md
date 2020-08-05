@@ -181,3 +181,89 @@ public class UserController {
 <p><b>缺省值</b></p>
 
 ![](images/1911127-20200805000304239-331835819.png)
+
+
+<h5>Hystrix仪表盘：服务监控</h5>
+
+新建一个微服务用于监控其它服务
+
+`pom.xml`
+```
+...
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <!--健康检查-->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+    </dependency>
+</dependencies>
+...
+```
+注：被监控的微服务也必须有`spring-boot-starter-actuator`依赖
+`application.yml`
+```
+server:
+  port: 10001
+```
+`HystrixDashboardApp.java`
+```
+/**
+ * @author :jty
+ * @date :20-8-5
+ * @description :服务监控仪表盘
+ */
+@SpringBootApplication
+@EnableHystrixDashboard
+public class HystrixDashboardApp {
+    public static void main(String[] args) {
+        SpringApplication.run(HystrixDashboardApp.class);
+    }
+
+}
+
+```
+启动后访问 http://localhost:10001/hystrix
+
+![](images/1911127-20200805230537529-73662780.png)
+
+注：被监控微服务有如下要求
+ - 有`spring-boot-starter-actuator`依赖
+ - 开启熔断器`@EnableCircuitBreaker`
+ - 监控流中的地址不能为https请求
+ - 若为SpringBoot 2.x以上需手动映射`/actuator/hystrix.stream`
+```
+ @Bean
+    public ServletRegistrationBean getServlet() {
+        HystrixMetricsStreamServlet streamServlet = new HystrixMetricsStreamServlet();
+        ServletRegistrationBean registrationBean = new ServletRegistrationBean(streamServlet);
+        registrationBean.setLoadOnStartup(1);
+        registrationBean.addUrlMappings("/actuator/hystrix.stream");
+        registrationBean.setName("HystrixMetricsStreamServlet");
+        return registrationBean;
+    }
+```
+
+<p><b>监控localhost:8001如下</b></p>
+
+![](images/1911127-20200805232814668-2113044084.png)
+
+
+<p><b>从网上贴来的各个指标含义</b></p>
+
+七色:左边七个颜色的数字分别对应右边七种颜色说明。
+
+Success成功| Short-Circuited短路 | Bad Request请求无效 | Timeout超时 | Rejected拒绝| Failure失败 | Error %错误
+
+一圈:左边实心圆有两种含义，它通过颜色的变化代表了实例的健康程度，它的健康度从绿色<黄色<橙色<红色递减。该实心圆除了颜色的变化之外，它的大小也会根据实例的请求流量发生变化，流量越大该实心圆越大，所以通过实心圆的展示就可以在大量实例中快速的发现故障实例和高压力实例。
+
+一线:用来监控2分钟内流量的相对变化，可以通过它观察到流量的上升和下降趋势。
+
+![](images/1911127-20200805232648734-435714307.png)
