@@ -146,7 +146,7 @@ public class SelfFilterConfiguration {
     }
 }
 ```
-
+实现方式二
 `SelfFilter.java`
 ```
 @Component
