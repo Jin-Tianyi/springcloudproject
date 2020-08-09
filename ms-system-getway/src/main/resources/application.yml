@@ -15,7 +15,8 @@ spring:
           uri: lb://admin-server #转发后的微服务名 以lb开头
 #          uri: http://localhost:8001 #转发后的地址
           predicates:
-            - Path=/admin/**   #请求断言，以路径方式以author开头的请求路径转发到uri，官方提供多种断言方式，可结合使用
+            #- Path=/admin/**   #请求断言，以路径方式以author开头的请求路径转发到uri，官方提供多种断言方式，可结合使用
+            - Path=/**   #所有请求
           filters:
             - StripPrefix=1 #过滤器，对请求进行一系列操作，如请求，权限认证，鉴权，监控，限流，转发等,StripPrefix 去掉一层请求（去掉admin）
          #最终形式，如https://localhost:9527/admin/get/user/6 =>https://localhost:8001/admin/get/user/6
