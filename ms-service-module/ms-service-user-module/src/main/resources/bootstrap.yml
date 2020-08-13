@@ -13,3 +13,9 @@ spring:
       #http://localhost:4040/master/admin0-dev.yml
 
 
+#暴露监控地址
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
