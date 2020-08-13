@@ -170,3 +170,38 @@ curl -X POST "http://localhost:8001/actuator/refresh"
 修改后
 ![](images/1911127-20200814015530767-1754141936.png)
 
+
+注：SpringCloud Config会将git仓库缓存到本地
+![](images/1911127-20200814022114881-294384086.png)
+为了防止获取到本地错误文件，可在配置文件中修改强制获取远程文件`force-pull: true`
+```
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/spring-cloud-samples/config-repo
+          force-pull: true
+```
+如果您具有多个存储库配置，则可force-pull以为每个存储库配置属性，如以下示例所示：
+```
+spring:
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://git/common/config-repo.git
+          force-pull: true
+          repos:
+            team-a:
+                pattern: team-a-*
+                uri: https://git/team-a/config-repo.git
+                force-pull: true
+            team-b:
+                pattern: team-b-*
+                uri: https://git/team-b/config-repo.git
+                force-pull: true
+            team-c:
+                pattern: team-c-*
+                uri: https://git/team-a/config-repo.git
+```
