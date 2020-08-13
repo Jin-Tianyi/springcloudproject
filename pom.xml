@@ -9,13 +9,11 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>ms-eureka-server-s1</module>
-        <module>ms-eureka-server-s2</module>
-        <module>ms-eureka-server-s3</module>
-        <module>ms-system-getway</module>
         <module>ms-service-module</module>
         <module>ms-service-module/ms-service-user-module</module>
         <module>ms-service-module/ms-service-admin-module</module>
         <module>ms-service-common</module>
+        <module>ms-config-server</module>
 
     </modules>
     <packaging>pom</packaging>
@@ -83,7 +81,7 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <configuration>
                     <delimiters>
-                        <delimit>@</delimit>
+                        <delimit>+</delimit>
                     </delimiters>
                 </configuration>
             </plugin>

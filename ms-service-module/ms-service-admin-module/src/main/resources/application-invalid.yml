@@ -19,5 +19,5 @@ eureka:
 info:
   app.name: admin-server
   company.name: www.jty.com
-  build.artifactId: @project.artifactId@
-  build.version: @project.version@
+  build.artifactId: +project.artifactId+
+  build.version: +project.version+

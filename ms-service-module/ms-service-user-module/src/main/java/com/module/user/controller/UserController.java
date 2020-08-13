@@ -26,7 +26,9 @@ public class UserController {
     @Autowired
     private DiscoveryClient discoveryClient;
     @Value("server.port")
-    String serverPort;
+    private String serverPort;
+    @Value("spring.datasource.url")
+    private String configInfo;
     Logger logger = LoggerFactory.getLogger(UserController.class);
 
     /**
@@ -67,5 +69,10 @@ public class UserController {
             logger.info("-->{}---{}---{}---{}<--", instance.getInstanceId(), instance.getHost(), instance.getPort(), instance.getUri());
         }
         return instances;
+    }
+
+    @GetMapping(value = "/get/user/configInfo")
+    public String configInfo() {
+        return configInfo;
     }
 }
