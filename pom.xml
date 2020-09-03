@@ -8,14 +8,11 @@
     <artifactId>springcloudproject</artifactId>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>ms-eureka-server-s1</module>
-        <module>ms-eureka-server-s2</module>
-        <module>ms-eureka-server-s3</module>
-        <module>ms-system-getway</module>
         <module>ms-service-module</module>
         <module>ms-service-module/ms-service-user-module</module>
         <module>ms-service-module/ms-service-admin-module</module>
         <module>ms-service-common</module>
+        <module>ms-service-module/ms-service-user01-module</module>
 
     </modules>
     <packaging>pom</packaging>
@@ -46,24 +43,24 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
+           <!-- <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>Hoxton.SR3</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <!--<dependency>
+            </dependency>-->
+            <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-alibaba-dependencies</artifactId>
                 <version>2.2.1.RELEASE</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>-->
-           <!-- <dependency>
+            </dependency>
+            <!--<dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>aliyun-spring-boot-dependencies</artifactId>
-                <version>{project-version}</version>
+                <version>1.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>-->
