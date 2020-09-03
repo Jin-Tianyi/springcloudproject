@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.List;
  * @description :用户模块
  */
 @RestController
+@RefreshScope
 public class UserController {
     @Autowired
     private UserMapper userMapper;
@@ -27,6 +29,8 @@ public class UserController {
     private DiscoveryClient discoveryClient;
     @Value("${server.port}")
     String serverPort;
+    @Value("${service.info}")
+    String serviceInfo;
     Logger logger = LoggerFactory.getLogger(UserController.class);
 
     /**
@@ -36,7 +40,7 @@ public class UserController {
     public Result searchUser(@PathVariable(value = "userId") int userId) {
         User user = userMapper.getUserById(userId);
         if (user != null) {
-            return new Result(200, "成功" + serverPort, user);
+            return new Result(200, "成功" + serverPort+":"+serviceInfo, user);
         }
         return new Result(-200, "无数据");
     }

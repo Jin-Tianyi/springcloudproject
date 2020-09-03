@@ -1,10 +1,7 @@
-server:
-  port: 8003
+service:
+  info: user-server-dev.yaml:->8002端口，namespace:DEV,group:DEV
+
 spring:
-  profiles:
-    active: dev
-  application:
-    name: user-server
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/cloud_learn?useUnicode=true&characterEncoding=utf8&useSSL=false&nullCatalogMeansCurrent=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
@@ -25,23 +22,9 @@ spring:
     # 打开PSCache，并且指定每个连接上PSCache的大小
     poolPreparedStatements: true
     maxPoolPreparedStatementPerConnectionSize: 20
-  #配置nacos服务注册中心地址
-  cloud:
-    nacos:
-      discovery:
-        server-addr: 127.0.0.1:8848
 mybatis:
-    ### xml存放路径
+  ### xml存放路径
   mapper-locations: classpath:mapper/*Mapper.xml
-
-#eureka:
-#  client:
-#    serviceUrl: #注册服务到eureka集群
-#      defaultZone: http://eureka8761.com:8761/eureka,http://eureka8762.com:8762/eureka,http://eureka8763.com:8763/eureka
-#  instance:
-#    instance-id: ${spring.application.name}:${server.port} #微服务信息提示为服务名：端口,可自定义
-#    prefer-ip-address: true     #访问路径可以显示IP地址
-
 
 #开启所有端点允许HTTP查看
 management:
@@ -50,9 +33,6 @@ management:
       exposure:
         include: "*"
 
-#微服务信息 nacos不需要
-#info:
-#  app.name: user-server
-#  company.name: www.jty.com
-#  build.artifactId: @project.artifactId@
-#  build.version: @project.version@
+#namespace:DEV
+#Group: DEV
+#Data ID: user-server-dev.yaml

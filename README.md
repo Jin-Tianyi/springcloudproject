@@ -306,6 +306,140 @@ public class UserController {
 ![](images/1911127-20200903204455636-1936433885.png)
 ![](images/1911127-20200903204519738-501399819.png)
 
+
+###### 动态配置服务
+对8002用户微服务进行动态配置
+
+`pom.xml`添加
+```
+...
+
+<dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+...
+```
+`UserController.java`
+```
+package com.module.user.controller;
+
+import com.base.dao.User;
+import com.base.entity.Result;
+import com.module.user.mapper.UserMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+
+/**
+ * @author :jty
+ * @date :20-7-20
+ * @description :用户模块
+ */
+@RestController
+@RefreshScope
+public class UserController {
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private DiscoveryClient discoveryClient;
+    @Value("${server.port}")
+    String serverPort;
+    /** 验证动态配置 */
+    @Value("${service.info}")
+    String serviceInfo;
+    Logger logger = LoggerFactory.getLogger(UserController.class);
+
+    /**
+     * 查询用户
+     */
+    @GetMapping(value = "/get/user/{userId}", produces = "application/json;charset=utf-8")
+    public Result searchUser(@PathVariable(value = "userId") int userId) {
+        User user = userMapper.getUserById(userId);
+        if (user != null) {
+            return new Result(200, "成功" + serverPort+":"+serviceInfo, user);
+        }
+        return new Result(-200, "无数据");
+    }
+
+    /**
+     * 添加用户
+     */
+    @PostMapping(value = "/post/create/user", produces = "application/json;charset=utf-8")
+    public Result createUser(@RequestBody User user) {
+        int i = userMapper.createUser(user);
+        if (i > 0) {
+            return new Result(200, "成功" + serverPort, i);
+        }
+        return new Result(-200, "插入失败");
+    }
+}
+
+```
+`bootstrap.yml`
+```
+server:
+  port: 8002
+spring:
+  application:
+    name: user-server
+  #配置nacos服务注册中心地址、配置中心地址
+  cloud:
+    nacos:
+      discovery:
+        #服务注册中心
+        server-addr: 127.0.0.1:8848
+        #配置中心
+      config:
+        server-addr: 127.0.0.1:8848
+        prefix: ${spring.application.name}
+        #配置文件类型
+        file-extension: yaml
+        #enableRemoteSyncConfig: true
+
+
+#配置文件匹配规则 ${prefix}-${spring.profiles.active}.${file-extension} ==》user-server-dev.yaml
+#prefix 默认为 spring.application.name 的值，也可以通过配置项 spring.cloud.nacos.config.prefix来配置。
+#spring.profiles.active 即为当前环境对应的 profile，详情可以参考 Spring Boot文档。 注意：当 spring.profiles.active 为空时，对应的连接符 - 也将不存在，dataId 的拼接格式变成 ${prefix}.${file-extension}
+#file-exetension 为配置内容的数据格式，可以通过配置项 spring.cloud.nacos.config.file-extension 来配置。目前只支持 properties 和 yaml 类型。
+
+```
+`application.yml`
+```
+#可在bootstrap.yml中配置
+spring:
+  profiles:
+    active: dev
+```
+添加配置
+![](images/1911127-20200903233516440-1400469177.png)
+![](images/1911127-20200903233624900-502338959.png)
+启动服务后请求(初次配置后报错，Could not resolve placeholder 'service.info' in value "${service.info}"，配置中心配置文件不生效，检查各项配置均无问题，最后重启Nacos后正常启动)
+![](images/1911127-20200903233724377-1266074570.png)
+![](images/1911127-20200903233735320-873408219.png)
+修改配置文件校验动态配置是否生效（编辑后重新发布）
+![](images/1911127-20200903233835840-2079341726.png)
+![](images/1911127-20200903233923435-1913828074.png)
+
+###### 配置参数
+
+配置参数在`com.alibaba.cloud.nacos.NacosConfigProperties`中，其中spring.cloud.nacos.config.group，spring.cloud.nacos.config.fileExtension等有默认值，默认开启动态刷新；
+![](images/1911127-20200903234454172-1622863294.png)
+
+在Nacos中可进行不同粒度的配置，使用默认的namespace和groud只配置dataId(如上述的配置)，则为最小粒度配置，其中还有group和namespace的配置，三个配置粒度从大到小为namespace>group>dataId
+![](images/1911127-20200904001241983-1030884047.png)
+需在配置文件中添加`spring.cloud.nacos.config.group=DEV`和`spring.cloud.nacos.config.namespace=DEV`
+![](images/1911127-20200904001808730-74921838.png)
+
+
 通过服务发现请求user-server服务，可以发现Nacos自带负载均衡。
 ![](images/1911127-20200903204639688-1136920753.png)
 ![](images/1911127-20200903204736699-580139061.png)

@@ -5,11 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-
 /**
  * @author :jty
  * @date :20-7-20
- * @description :用户模块   Nacos只需要@EnableDiscoveryClient注解即可开启服务注册与发现
+ * @description :用户模块   Nacos只需要@EnableDiscoveryClient注解即可开启服务注册与发现,@RefreshScope实现配置动态刷新
  */
 @SpringBootApplication
 @EnableDiscoveryClient
