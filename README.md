@@ -446,3 +446,186 @@ spring:
 ![](images/1911127-20200903204832627-1941781390.png)
 
 
+##### Nacos集群搭建
+###### 一、拉取nacos镜像
+```
+docker pull nacos/nacos-server #拉取nacos镜像
+#创建挂载文件路径
+mkdir -p /usr/local/nacos/logs1 /usr/local/nacos/logs2 /usr/local/nacos/logs3
+mkdir -p /usr/etc/nacos/conf
+docker cp 18fa206c4883:/home/nacos/conf /usr/etc/nacos/conf #复制nacos配置目录到宿主机（或从其他地方复制需要application.properties、cluster.conf）
+#创建自定义网络
+docker network create --driver bridge --subnet 172.18.0.0/16 self_network
+#启动mysql容器
+docker create -p 3306:3306  --network self_network --network-alias mysql --name mysql8.0 -e MYSQL_ROOT_PASSWORD=123456 -v /usr/etc/mysql8.0/mysql/conf:/etc/mysql -v /usr/etc/mysql8.0/mysql/logs:/var/log/mysql -v /usr/etc/mysql8.0/mysql/data:/var/lib/mysql -v /usr/etc/mysql8.0/mysql/mysql-files:/var/lib/mysql-files  mysql
+#创建三个nacos容器
+docker run -p 18846:8848  --network self_network --network-alias nacos-server-1 --ip 172.18.0.03 --name nacos-server-1 -d -e JVM_XMS=256m -e JVM_XMX=512m -e MODE=cluster -e PREFER_HOST_MODE=hostname -v /usr/local/nacos/logs1:/home/nacos/logs -v /usr/etc/nacos/conf:/home/nacos/conf  nacos/nacos-server
+
+docker run -p 18847:8848  --network self_network --network-alias nacos-server-2 --ip 172.18.0.04 --name nacos-server-2 -d -e JVM_XMS=256m -e JVM_XMX=512m -e MODE=cluster -e PREFER_HOST_MODE=hostname -v /usr/local/nacos/logs2:/home/nacos/logs -v /usr/etc/nacos/conf:/home/nacos/conf  nacos/nacos-server
+
+docker run -p 18848:8848  --network self_network --network-alias nacos-server-3 --ip 172.18.0.05 --name nacos-server-3 -d -e JVM_XMS=256m -e JVM_XMX=512m -e MODE=cluster -e PREFER_HOST_MODE=hostname -v /usr/local/nacos/logs3:/home/nacos/logs -v /usr/etc/nacos/conf:/home/nacos/conf  nacos/nacos-server
+```
+开放端口后尝试请求登录界面
+![](images/1911127-20200905211300331-153981311.png)
+查看日志，
+![](images/1911127-20200905211324270-220530989.png)
+发现nacos启动报错，原因是启动容器的时候没配置mysql地址,根据自己情况配置
+![](images/1911127-20200905214115086-1720515768.png)
+配置后发现Caused by: java.net.SocketTimeoutException: connect timed out，但是我该配置文件在本地是可以使用的。推测容器可能连不上宿主机，尝试ping宿主机ip后ping不通，ping 8.8.8.8也ping不通.
+![](images/1911127-20200905222751316-2103266751.png)
+![](images/1911127-20200905223456419-22451200.png)
+![](images/1911127-20200905223125787-561920488.png)
+解决方式：
+多番尝试后将数据连接地址改成172.18.0.2(mysql容器IP，原本使用阿里云外网地址)即可正常启动（mysql也是使用docker安装，--net=Bridge模式）,这是容器间的通讯问题，暂时不了解。
+`Caused by: com.mysql.cj.exceptions.CJException: Public Key Retrieval is not allowed`在url后拼接allowPublicKeyRetrieval=true
+
+```
+docker network inspect self_network #获取网络的元数据。db_url 中ip地址如下
+```
+![](images/1911127-20200906061155117-1250861337.png)
+
+###### 更改Nginx配置
+```
+
+#user  nobody;
+worker_processes  1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    #log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+    #                  '$status $body_bytes_sent "$http_referer" '
+    #                  '"$http_user_agent" "$http_x_forwarded_for"';
+
+    #access_log  logs/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+
+    #gzip  on;
+    #三个nacos容器端口
+    upstream nacos{
+        server 127.0.0.1:18846;
+        server 127.0.0.1:18847;
+        server 127.0.0.1:18848;
+    }
+
+    server {
+        listen       8848;
+        server_name  localhost;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            #root   html;
+            #index  index.html index.htm;
+            #添加代理
+            proxy_pass http://nacos;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   html;
+        }
+
+        # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+        #
+        #location ~ \.php$ {
+        #    proxy_pass   http://127.0.0.1;
+        #}
+
+        # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+        #
+        #location ~ \.php$ {
+        #    root           html;
+        #    fastcgi_pass   127.0.0.1:9000;
+        #    fastcgi_index  index.php;
+        #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+        #    include        fastcgi_params;
+        #}
+
+        # deny access to .htaccess files, if Apache's document root
+        # concurs with nginx's one
+        #
+        #location ~ /\.ht {
+        #    deny  all;
+        #}
+    }
+
+
+    # another virtual host using mix of IP-, name-, and port-based configuration
+    #
+    #server {
+    #    listen       8000;
+    #    listen       somename:8080;
+    #    server_name  somename  alias  another.alias;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+
+    # HTTPS server
+    #
+    #server {
+    #    listen       443 ssl;
+    #    server_name  localhost;
+
+    #    ssl_certificate      cert.pem;
+    #    ssl_certificate_key  cert.key;
+
+    #    ssl_session_cache    shared:SSL:1m;
+    #    ssl_session_timeout  5m;
+
+    #    ssl_ciphers  HIGH:!aNULL:!MD5;
+    #    ssl_prefer_server_ciphers  on;
+
+    #    location / {
+    #        root   html;
+    #        index  index.html index.htm;
+    #    }
+    #}
+
+}
+
+```
+
+在cluster.conf 配置三个容器的地址；
+```
+172.18.0.03:8848
+172.18.0.04:8848
+172.18.0.05:8848
+```
+![](images/1911127-20200906045335047-1539995499.png)
+
+校验一下是否配置成功
+![](images/1911127-20200906060508196-756531737.png)
+
+![](images/1911127-20200906060614679-1986992046.png)
+
+
+问题：mysql容器的ip可能会变,需要时可以指定固定ip;
