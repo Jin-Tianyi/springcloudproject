@@ -1,3 +1,5 @@
+server:
+  port: 8002
 spring:
   application:
     name: user-server
@@ -7,6 +9,12 @@ spring:
       discovery:
         #服务注册中心
         server-addr: 127.0.0.1:8848
+    #sentinel 监控界面地址
+    sentinel:
+      transport:
+        dashboard: 127.0.0.1:8080
+        port: 8719
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/cloud_learn?useUnicode=true&characterEncoding=utf8&useSSL=false&nullCatalogMeansCurrent=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
