@@ -13,7 +13,16 @@ spring:
       transport:
         dashboard: 127.0.0.1:8080
         port: 8719
-
+#开启支持feign
+feign:
+  sentinel:
+    enabled: true
+#OpenFeign 默认支持Ribbon
+ribbon:
+  #指的是建立连接所用的时间，适用于网络状况正常的情况下，两端连接所用的时间
+  ReadTimeout: 5000
+  #指的是连接后从服务器读取到可用资源所用的时间（默认是1秒）
+  ConnectTimeout: 5000
 #用户模块服务名
 provider-service-url:
   user-service: http://user-server
