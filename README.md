@@ -211,3 +211,213 @@ public class UserSentinel {
 ![](images/1911127-20200909005021682-1290513245.png)
 
 以上测试均需先启动nacos和sentinel控制台
+
+##### 支持feign服务调用
+`pom.xml`
+```
+...
+       <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+            <version>2.2.2.RELEASE</version>
+        </dependency>
+...
+```
+`application.yml`
+```
+#开启支持feign
+feign:
+  sentinel:
+    enabled: true
+```
+<b>主启动类添加`@EnableFeignClients`</b>
+
+`UserService.java`
+```
+/**
+ * @author :jty
+ * @date :20-9-9
+ * @description :feign远程调用接口
+ */
+@Component
+@FeignClient(value = "user-server", fallback = UserServiceImpl.class)
+public interface UserService {
+    /**
+     * 查询用户
+     * @param userId
+     * @return Result
+     */
+    @GetMapping(value = "/get/user/{userId}", produces = "application/json;charset=utf-8")
+    Result searchUser(@PathVariable(value = "userId") int userId);
+    /**
+     * 添加用户
+     * @param user
+     * @return Result
+     */
+    @PostMapping(value = "/post/create/user", produces = "application/json;charset=utf-8")
+    Result createUser(@RequestBody User user) ;
+}
+```
+`UserServiceImpl.java`
+```
+/**
+ * @author :jty
+ * @date :20-9-9
+ * @description : 服务降级熔断实现
+ */
+@Component
+public class UserServiceImpl implements UserService {
+    /**
+     * 查询用户
+     * @param userId
+     * @return Result
+     */
+    @Override
+    @GetMapping(value = "/get/user/{userId}", produces = "application/json;charset=utf-8")
+    public Result searchUser(@PathVariable(value = "userId") int userId) {
+        return new Result(-200, "服务降级或熔断",null);
+    }
+    /**
+     * 添加用户
+     * @param user
+     * @return Result
+     */
+    @Override
+    @PostMapping(value = "/post/create/user", produces = "application/json;charset=utf-8")
+    public Result createUser(@RequestBody User user) {
+        return new Result(-200, "服务降级或熔断",null);
+    }
+}
+```
+`UserSentinel.java`
+```
+/**
+ * @author :jty
+ * @date :20-9-9
+ * @description : sentinel 服务降级、熔断方法实现
+ */
+public class UserSentinel {
+    public static Result blockHandler(int userId, BlockException e){
+        return new Result(-200, "sentinel 服务降级或熔断",null);
+    }
+    public static Result fallback(int userId, BlockException e){
+        return new Result(-200, "sentinel 服务降级或熔断",null);
+    }
+}
+```
+
+`AdminController.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-28
+ * @description : 管理员模块
+ */
+@RestController
+public class AdminController {
+    @Autowired
+    private RestTemplate restTemplate;
+    /** 服务提供者地址 */
+    @Value("${provider-service-url.user-service}")
+    private String userServiceUrl;
+    @Resource
+    private UserService userService;
+
+    /** feign 调用，feign 服务降级和熔断*/
+    @GetMapping(value = "/admin/find/user/{userId}", produces = "application/json;charset=utf-8")
+    public Result searchUser(@PathVariable int userId) {
+        Result result = userService.searchUser(userId);
+        return result;
+    }
+    /** restTemplate 调用，sentinel 服务降级和熔断 */
+    @GetMapping(value = "/admin/get/user/{userId}", produces = "application/json;charset=utf-8")
+    @SentinelResource(value = "/admin/get/user/", blockHandler = "blockHandler",
+            blockHandlerClass = UserSentinel.class, fallback = "fallback")
+    public Result getUser(@PathVariable int userId) {
+        int c = 10/0;
+        Result result = restTemplate.getForObject(userServiceUrl + "/get/user/" + userId, Result.class);
+        return result;
+    }
+    @GetMapping(value = "/admin/post/create/user", produces = "application/json;charset=utf-8")
+    @SentinelResource(value = "/admin/post/create/user", blockHandler = "blockHandler",
+            blockHandlerClass = UserSentinel.class, fallback = "fallback")
+    public Result createUser(@RequestBody User user) {
+        Result result = userService.createUser(user);
+        return result;
+    }
+}
+```
+`RestTemplateConfig.java`
+```
+/**
+ * @author :jty
+ * @date :20-7-28
+ * @description :注入RestTemplate Bean
+ */
+@Configuration
+public class RestTemplateConfig {
+    /**
+     * @LoadBalanced 通过服务名调用，开启负载均衡
+     * */
+    @Bean
+    @LoadBalanced
+    public RestTemplate getRestTemplate(){
+        return new RestTemplate();
+    }
+}
+```
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909024930020-242573152.png)
+sentinel异常熔断
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909024912567-112530827.png)
+
+
+用户服务user-server关闭，feign调用
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909025157219-1625832502.png)
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909025023704-1316516659.png)
+
+去掉异常后sentinel
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909025250319-422673573.png)
+用户服务user-server关闭
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909025436406-2098957669.png)
+
+##### sentinel配置持久化（Nacos）
+`pom.xml`
+```
+...
+      <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-datasource-nacos</artifactId>
+      </dependency>
+...
+```
+`application.yml`
+```
+...
+spring:
+  cloud:
+    sentinel:
+      datasource:
+        ds1:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: ${spring.application.name}-flow
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: s
+        ds2:
+          nacos:
+            # nacos地址
+            server-addr: 127.0.0.1:8848
+            # 配置文件名称
+            data-id: ${spring.application.name}-degrade
+            # 分组
+            group-id: DEFAULT_GROUP
+            # 数据格式
+            data-type: json
+            # 规则类型 com/alibaba/cloud/sentinel/datasource/RuleType.class 定义的枚举类型
+            rule-type: degrade
+...
+```
+配置参数在各规则参数中查询
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909042500446-1535528618.png)
+![](https://img2020.cnblogs.com/blog/1911127/202009/1911127-20200909042601169-2479269.png)

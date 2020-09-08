@@ -13,6 +13,21 @@ spring:
       transport:
         dashboard: 127.0.0.1:8080
         port: 8719
+      datasource:
+        ds1:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: ${spring.application.name}-flow
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: flow
+        ds2:
+          nacos:
+            server-addr: 127.0.0.1:8848
+            data-id: ${spring.application.name}-degrade
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: degrade
 #开启支持feign
 feign:
   sentinel:
