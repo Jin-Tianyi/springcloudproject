@@ -9,10 +9,10 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>ms-service-module</module>
-        <module>ms-service-module/ms-service-user-module</module>
-        <module>ms-service-module/ms-service-admin-module</module>
         <module>ms-service-common</module>
-        <module>ms-service-module/ms-service-user01-module</module>
+        <module>ms-service-module/ms-service-account-module</module>
+        <module>ms-service-module/ms-service-order-module</module>
+        <module>ms-service-module/ms-service-storage-dodule</module>
 
     </modules>
     <packaging>pom</packaging>
@@ -27,7 +27,7 @@
         <lombok.version>1.18.10</lombok.version>
         <mysql.version>8.0.15</mysql.version>
         <druid.version>1.1.21</druid.version>
-        <mybatis.spring.boot.version>2.1.1</mybatis.spring.boot.version>
+        <mybatis.spring.boot.version>2.2.5</mybatis.spring.boot.version>
     </properties>
     <!--子模块继承后，锁定子模块的version、groupId,
     子模块可省略这两个属性，
@@ -43,13 +43,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-           <!-- <dependency>
+            <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>Hoxton.SR3</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>-->
+            </dependency>
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-alibaba-dependencies</artifactId>
